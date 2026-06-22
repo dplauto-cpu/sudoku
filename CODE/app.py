@@ -1,5 +1,5 @@
 """
-app.py — Sudoku Solver con Streamlit
+app.py — Sudoku Solvere con Streamlit
 Sube una foto de un sudoku y obtén la solución.
 
 Para ejecutar:
@@ -42,8 +42,8 @@ def cargar_modelos():
     return _cargar(RUTA_YOLO, RUTA_CNN, ruta_solver)
 
 # ── Interfaz principal ───────────────────────────────────────────────────
-st.title("🧩 Sudoku para gente vaga como tú")
-st.markdown("Sube una foto de un sudoku y ya veremos lo que pasa.")
+st.title("🧩 Sudoku para gente vaga y malaje como tú")
+st.markdown("Sube una foto de un sudoku, no te lo vas a creer pero cuanto peor la calidad más se viene arriba y lo resuelve.")
 st.markdown("---")
 
 # Comprobar que los modelos existen antes de cargar
