@@ -30,10 +30,10 @@ sudoku/
 │
 ├── sudoku_Paso1_actualizado.ipynb   # Entrenar YOLO
 ├── sudoku_Paso2b_warp.ipynb         # Segmentación con perspective warp
-├── sudoku_Paso4_CNN_mejorada.ipynb  # Reentrenar CNN con augmentation
-├── sudoku_Paso5_etiquetado.ipynb    # Etiquetado manual + CNN final
-├── sudoku_Paso4_Pipelinecompleto.ipynb  # Pipeline integrado
-└── sudoku_Paso5_Streamlit.ipynb     # App Streamlit
+├── sudoku_Paso3b_CNN_mejorada.ipynb  # Reentrenar CNN con augmentation
+├── sudoku_Paso4_etiquetado.ipynb    # Etiquetado manual + CNN final
+├── sudoku_Paso5_Pipelinecompleto.ipynb  # Pipeline integrado
+└── sudoku_Paso6_Streamlit.ipynb     # App Streamlit
 ```
 
 ---
@@ -111,13 +111,13 @@ de contornos que descartaba dígitos finos con poca "masa")
   (pistas en blanco, solución en verde)
 - `pipeline.py` exportado para Streamlit
 
-### ✅ PASO 6 (Streamlit) — Demo web (FUNCIONANDO, con limitaciones conocidas)
+### ⚠️ PASO 6 (Streamlit) — Demo web (FUNCIONANDO, con limitaciones conocidas pero no resueltas)
 - `app.py` generado y ejecutado en local
 - Interfaz: subir foto → mostrar solución lado a lado
 - Matrices detectada y resuelta en formato tabular
 - Ejecutar en local: `streamlit run app.py`
 
-### ✅ PASO 7 — Debugging en producción con fotos reales (22 junio)
+### ⚠️ PASO 7 — Debugging en producción con fotos reales (tampoco mejoró sensiblemente la incertidumbre)
 
 **Problema de partida:** la app funcionaba sin errores de código, pero en
 la mayoría de fotos reales devolvía "Sin solución. Algún dígito mal
@@ -190,7 +190,7 @@ correctas (un solo dígito mal leído invalida el tablero entero).
    solo se pinta encima de las celdas que el solver rellenó (verde); las
    pistas originales se dejan tal cual están en la foto.
 
-**Pendiente / no resuelto hoy:**
+**Pendiente / sin resolver en el plazo del ejercicio (4 días laborables):**
 - Sangrado de tinta entre celdas adyacentes en fotos con cierta
   rotación/inclinación (un dígito puede generar una lectura fantasma en
   la celda vecina); `limpiar_conflictos()` detecta el conflicto pero no
@@ -253,11 +253,11 @@ STREAMLIT muestra resultado
 | Limpieza de conflictos directos | ✅ Antes de resolver | `limpiar_conflictos()` |
 | Backtracking — resolución | ✅ Con límite de iteraciones | `resolver_sudoku()` |
 | Fallback neuronal (solver 1M partidas) | ⚠️ Integrado, solo rellena vacíos | `modelo_solver_1m.keras` |
-| Streamlit — demo | ✅ Funcionando, 6/8 en set de prueba | `app.py` |
+| Streamlit — demo | ⚠️ Funciona ocasionalmente, 6/8 en set de prueba | `app.py` |
 
 ---
 
-## 💡 Lecciones aprendidas
+## 💡 Lecciones aprendidas según iban llegando los problemas
 
 **1. El problema raíz no siempre está donde parece.**
 Se invirtió tiempo mejorando la CNN cuando el problema real era la
@@ -269,16 +269,16 @@ El diagnóstico visual (las 81 celdas preprocesadas) reveló inmediatamente
 que las celdas llegaban torcidas. Sin esa visualización se habrían
 seguido ajustando umbrales sin llegar a ningún lado.
 
-**3. Domain gap es el enemigo silencioso.**
+**3. Cuidado con Domain gap.**
 MNIST tiene 99%+ de accuracy pero es inútil para dígitos impresos de
 sudoku. La precisión en el dataset de entrenamiento no dice nada sobre
 el rendimiento en producción si los dominios son distintos.
 
 **4. Pocos datos reales valen más que mucho augmentation.**
-~200 celdas etiquetadas manualmente + oversampling ×50 superaron a
+206 celdas etiquetadas manualmente + oversampling ×50 superaron a
 decenas de miles de imágenes MNIST con augmentation agresivo.
 
-**5. Los bugs de indentación en Python son especialmente traidores.**
+**5. Los bugs de indentación en Python son especialmente irritantes.**
 Un `return` mal indentado hizo que la función procesara 1 celda en
 lugar de 81, y el error no era obvio hasta ver `✅ 1 celda extraída`.
 
