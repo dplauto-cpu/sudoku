@@ -1,0 +1,163 @@
+FOTO DE SUDOKU → SUDOKU RESUELTO
+Pipeline completo — Esquema por fases
+================================================
+
+Objetivo: Recibir una fotografía de un sudoku y devolver la misma
+imagen con la solución superpuesta.
+
+Herramientas DL usadas:
+  · YOLO (localiza la cuadrícula en la foto)
+  · CNN tipo MNIST (lee los dígitos de cada celda)
+
+Punto más frágil: un dígito mal leído en la Fase 4 invalida
+la solución completa.
+
+================================================
+
+FASE 1 — ENTRADA Y PREPROCESADO DE IMAGEN
+Herramienta: OpenCV / PIL
+------------------------------------------------
+El usuario aporta una fotografía del sudoku (móvil, escáner o
+webcam). Antes de alimentar cualquier modelo hay que estandarizar
+la imagen.
+
+  Paso 1 · Recibir imagen
+    Acepta JPG, PNG o frame de vídeo. Puede venir de ruta local
+    o URL.
+
+  Paso 2 · Redimensionar
+    Escalar a 640×640 px, el tamaño estándar de entrada de YOLO.
+
+  Paso 3 · Normalizar píxeles
+    Convertir valores de [0, 255] a [0.0, 1.0] dividiendo entre 255.
+
+================================================
+
+FASE 2 — LOCALIZACIÓN DE LA CUADRÍCULA (YOLO)
+Herramienta: YOLO11 (Ultralytics)
+------------------------------------------------
+YOLO detecta y delimita la cuadrícula 9×9 dentro de la fotografía,
+aunque esté inclinada o con perspectiva. Es el primer modelo de
+Deep Learning del pipeline.
+
+  Paso 1 · Inferencia con YOLO11n
+    Modelo preentrenado (o con fine-tuning en imágenes de sudokus)
+    que devuelve la bounding box de la cuadrícula.
+
+  Paso 2 · Obtener bounding box
+    Coordenadas (x1, y1) – (x2, y2) que enmarcan la cuadrícula.
+
+  Paso 3 · Corrección de perspectiva
+    Transformación homográfica para obtener la cuadrícula vista de
+    frente, como si se hubiese fotografiado en paralelo.
+
+  ⚠ Si YOLO no detecta la cuadrícula con confianza suficiente
+    (conf < 0.5), rechazar la imagen y pedir una nueva foto.
+
+================================================
+
+FASE 3 — SEGMENTACIÓN DE LAS 81 CELDAS
+Herramienta: OpenCV (geometría)
+------------------------------------------------
+La cuadrícula ya alineada se divide mecánicamente en 81 celdas
+individuales. No se necesita ningún modelo: es aritmética pura
+de píxeles.
+
+  Paso 1 · División geométrica
+    Cortar la imagen en una rejilla 9×9: cada celda ocupa 1/9 del
+    ancho y 1/9 del alto.
+
+  Paso 2 · Preprocesado por celda
+    Umbralización (binarizar a blanco/negro), eliminación de ruido
+    (denoising) y centrado del dígito.
+
+  Paso 3 · Generar lote de 81 imágenes
+    Cada celda queda como imagen 28×28 px en escala de grises,
+    lista para el clasificador.
+
+  ⚠ Este es el paso más delicado: fotos con sombras, líneas
+    borrosas o perspectiva residual pueden hacer que las celdas
+    queden mal recortadas. Un buen preprocesado aquí es clave.
+
+================================================
+
+FASE 4 — RECONOCIMIENTO DE DÍGITOS (CNN)
+Herramienta: CNN (Keras / TensorFlow)
+------------------------------------------------
+Una CNN similar a la que clasificó dígitos en MNIST analiza cada
+celda y devuelve qué dígito contiene (o si está vacía). Es el
+segundo modelo de Deep Learning del pipeline.
+
+  Paso 1 · Arquitectura CNN
+    Red tipo MNIST: Input(28,28,1) → Conv2D → MaxPooling → Flatten
+    → Dense. 10 clases: 0 = celda vacía, 1–9 = dígito.
+
+  Paso 2 · Inferencia en batch
+    Las 81 imágenes se pasan al modelo de una sola vez
+    (batch_size=81) para mayor eficiencia.
+
+  Paso 3 · Construir la matriz 9×9
+    Los 81 valores predichos se reorganizan en una matriz 9×9.
+    Los ceros son las celdas que el algoritmo deberá rellenar.
+
+  ⚠ Si la confianza de alguna celda es baja (softmax < 0.9),
+    marcarla como dudosa. Un dígito mal leído invalida la
+    solución completa.
+
+================================================
+
+FASE 5 — RESOLUCIÓN LÓGICA DEL SUDOKU
+Herramienta: Python puro (algoritmo clásico)
+------------------------------------------------
+La matriz 9×9 con las pistas conocidas se resuelve con un
+algoritmo clásico de backtracking. Esta fase no usa ningún
+modelo de Machine Learning.
+
+  Paso 1 · Validación de entrada
+    Comprobar que ninguna fila, columna o bloque 3×3 tenga
+    dígitos repetidos antes de empezar.
+
+  Paso 2 · Algoritmo de backtracking
+    Para cada celda vacía, probar dígitos del 1 al 9. Si hay
+    conflicto, deshacer y probar el siguiente. Recursión hasta
+    completar el tablero.
+
+  Paso 3 · Resultado
+    Solución única encontrada → continuar a Fase 6.
+    Sin solución → error en Fase 4; reportar al usuario y
+    pedir nueva imagen.
+
+================================================
+
+FASE 6 — PRESENTACIÓN DEL RESULTADO
+Herramienta: OpenCV / PIL
+------------------------------------------------
+Los dígitos solución se superponen sobre la imagen original del
+usuario, distinguiendo visualmente las pistas iniciales de los
+valores añadidos.
+
+  Paso 1 · Proyectar dígitos sobre la cuadrícula alineada
+    Dibujar cada dígito resuelto en el centro de su celda
+    (solo las que eran 0 en la entrada).
+
+  Paso 2 · Deshacer la transformación de perspectiva
+    Aplicar la transformación inversa de la Fase 2 para que
+    los dígitos aparezcan sobre la foto original.
+
+  Paso 3 · Imagen final anotada
+    Devolver la imagen con las pistas originales en un color
+    y los dígitos solución en otro (p. ej. azul) para
+    diferenciarlos.
+
+================================================
+
+RESUMEN DE HERRAMIENTAS POR FASE
+
+  Fase 1 · OpenCV / PIL          Preprocesado básico de imagen
+  Fase 2 · YOLO (Ultralytics)    Detección y localización
+  Fase 3 · OpenCV                Segmentación geométrica
+  Fase 4 · CNN (Keras/TF)        Clasificación de dígitos
+  Fase 5 · Python puro           Algoritmo de backtracking
+  Fase 6 · OpenCV / PIL          Superposición del resultado
+
+================================================

@@ -1,0 +1,9 @@
+# Dataset de partidas del solver (1.4 GB) - supera el límite de 100MB de GitHub.
+# Ver MODELO_SOLVER/README.md para el origen del dataset.
+MODELO_SOLVER/DATA/sudoku.csv
+
+# Backups de versiones anteriores del modelo CNN, no forman parte de la entrega.
+BACKUPS_NO_ENTREGAR/
+
+__pycache__/
+*.pyc
