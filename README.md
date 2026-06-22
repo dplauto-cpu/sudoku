@@ -1,4 +1,4 @@
-# Sudoku Solver — Foto → Solución
+# Sudoku Solvere — Foto → Solución
 
 Proyecto de Deep Learning: dada una fotografía de un sudoku, la app
 detecta la cuadrícula, lee los dígitos, resuelve el tablero y devuelve
